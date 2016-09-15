@@ -39,7 +39,7 @@ class Chart extends React.Component{
         },
         series: [{
           name: 'Time',
-          data: Object.keys(data).map((k, i) => [k, data[k]] )
+          data: data,
         }]
     }
   }

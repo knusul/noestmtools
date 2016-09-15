@@ -5,6 +5,27 @@ import MonteCarlo from './MonteCarlo.js'
 var headers = ["Work Start", "Work Done", "CycleTime"];
 
 class Excel extends React.Component {
+  calculateWorkInProgress(data){
+    var wipByDate = {}
+    data.forEach(range =>{
+      var startDate = range[0];
+      while(startDate < range[1])
+      {
+        if(wipByDate[startDate] === undefined){
+          wipByDate[startDate] = 1;
+        }else{
+          wipByDate[startDate] = wipByDate[startDate] + 1;
+        }
+        var newDate = startDate.setDate(startDate.getDate() + 1);
+        startDate = new Date(newDate);
+      }
+      
+    })
+    var keys = Object.keys(wipByDate);
+    var values = keys.map(function(v) { return wipByDate[v]; });
+    return values.reduce((a, b) => a+b) / values.length;
+
+  }
   toDays(miliseconds){
     return miliseconds / 1000 / 60 / 60 / 24
   }
@@ -15,7 +36,9 @@ class Excel extends React.Component {
     this._sort = this._sort.bind(this);
     this._showEditor = this._showEditor.bind(this);
     this._save = this._save.bind(this);
-    this.chartData = new MonteCarlo(this.state.data).getData()
+    var data = new MonteCarlo(this.state.data).getData();
+    var wip = this.calculateWorkInProgress(this.state.data);
+    this.chartData = Object.keys(data).map((k, i) => [k/wip, data[k]] )
   }
 
   calculateDeviation(array){
@@ -66,7 +89,7 @@ class Excel extends React.Component {
                         )
                     }
                     return React.DOM.td({key: idx, 'data-row': rowidx}, content)
-                  }), <td>{ this.toDays(row[1]-row[0]) } </td>
+                  }), <td>{ this.toDays(row[1]-row[0]) + 1 } </td>
                 )
             }))
 

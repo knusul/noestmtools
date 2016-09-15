@@ -2,27 +2,6 @@ class MonteCarlo{
   toDays(miliseconds){
     return miliseconds / 1000 / 60 / 60 / 24
   }
-  calculateWorkInProgress(data){
-    var wipByDate = {}
-    data.forEach(range =>{
-      var startDate = range[0];
-      while(startDate < range[1])
-      {
-        if(wipByDate[startDate] === undefined){
-          wipByDate[startDate] = 1;
-        }else{
-          wipByDate[startDate] = wipByDate[startDate] + 1;
-        }
-        var newDate = startDate.setDate(startDate.getDate() + 1);
-        startDate = new Date(newDate);
-      }
-      
-    })
-    
-    var keys = Object.keys(wipByDate);
-    var values = keys.map(function(v) { return wipByDate[v]; });
-    return values.reduce((a, b) => a+b) / values.length;
-  }
   calculateFrequencies(data){
     var counts = {};
 
@@ -34,14 +13,13 @@ class MonteCarlo{
   }
 
   getData(){
-    var storiesToEstimate = 40;
-    var results = this.monteCarlo(storiesToEstimate, this.data.map(arr => this.toDays(arr[1]-arr[0])));
+    var storiesToEstimate = 10;
+    var results = this.monteCarlo(storiesToEstimate, this.data.map(arr => this.toDays(arr[1]-arr[0])+1));
     return this.calculateFrequencies(results);
   }
 
   constructor(data){
     this.data = data;
-    this.workInProgress = this.calculateWorkInProgress(data);
   }
   monteCarlo(stories, leadTimes){
     var results = [];
@@ -55,7 +33,7 @@ class MonteCarlo{
       }
       results.push(totalDays);
     });
-    return results;
+    return results
   }
 
 }

@@ -62,7 +62,7 @@
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	var headers = ["Work Start", "Work Done", "CycleTime"];
-	var data = [[new Date("2016/06/01"), new Date("2016/06/04")], [new Date("2016/06/04"), new Date("2016/06/010")], [new Date("2016/06/03"), new Date("2016/06/04")], [new Date("2016/06/05"), new Date("2016/06/010")], [new Date("2016/06/07"), new Date("2016/06/015")], [new Date("2016/06/04"), new Date("2016/06/06")]];
+	var data = [[new Date("2016/08/24"), new Date("2016/08/25")], [new Date("2016/08/12"), new Date("2016/08/26")], [new Date("2016/08/08"), new Date("2016/08/12")], [new Date("2016/08/09"), new Date("2016/08/17")], [new Date("2016/08/05"), new Date("2016/08/26")], [new Date("2016/07/28"), new Date("2016/08/04")], [new Date("2016/08/03"), new Date("2016/08/10")], [new Date("2016/07/28"), new Date("2016/08/16")], [new Date("2016/07/22"), new Date("2016/07/22")]];
 	
 	(0, _reactDom.render)(_react2.default.createElement(_NoEstimates2.default, { headers: headers, initialData: data }), document.getElementById('app'));
 
@@ -194,25 +194,40 @@
 	var cachedSetTimeout;
 	var cachedClearTimeout;
 	
+	function defaultSetTimout() {
+	    throw new Error('setTimeout has not been defined');
+	}
+	function defaultClearTimeout () {
+	    throw new Error('clearTimeout has not been defined');
+	}
 	(function () {
 	    try {
-	        cachedSetTimeout = setTimeout;
-	    } catch (e) {
-	        cachedSetTimeout = function () {
-	            throw new Error('setTimeout is not defined');
+	        if (typeof setTimeout === 'function') {
+	            cachedSetTimeout = setTimeout;
+	        } else {
+	            cachedSetTimeout = defaultSetTimout;
 	        }
+	    } catch (e) {
+	        cachedSetTimeout = defaultSetTimout;
 	    }
 	    try {
-	        cachedClearTimeout = clearTimeout;
-	    } catch (e) {
-	        cachedClearTimeout = function () {
-	            throw new Error('clearTimeout is not defined');
+	        if (typeof clearTimeout === 'function') {
+	            cachedClearTimeout = clearTimeout;
+	        } else {
+	            cachedClearTimeout = defaultClearTimeout;
 	        }
+	    } catch (e) {
+	        cachedClearTimeout = defaultClearTimeout;
 	    }
 	} ())
 	function runTimeout(fun) {
 	    if (cachedSetTimeout === setTimeout) {
 	        //normal enviroments in sane situations
+	        return setTimeout(fun, 0);
+	    }
+	    // if setTimeout wasn't available but was latter defined
+	    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+	        cachedSetTimeout = setTimeout;
 	        return setTimeout(fun, 0);
 	    }
 	    try {
@@ -233,6 +248,11 @@
 	function runClearTimeout(marker) {
 	    if (cachedClearTimeout === clearTimeout) {
 	        //normal enviroments in sane situations
+	        return clearTimeout(marker);
+	    }
+	    // if clearTimeout wasn't available but was latter defined
+	    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+	        cachedClearTimeout = clearTimeout;
 	        return clearTimeout(marker);
 	    }
 	    try {
@@ -21971,6 +21991,30 @@
 	  _inherits(Excel, _React$Component);
 	
 	  _createClass(Excel, [{
+	    key: 'calculateWorkInProgress',
+	    value: function calculateWorkInProgress(data) {
+	      var wipByDate = {};
+	      data.forEach(function (range) {
+	        var startDate = range[0];
+	        while (startDate < range[1]) {
+	          if (wipByDate[startDate] === undefined) {
+	            wipByDate[startDate] = 1;
+	          } else {
+	            wipByDate[startDate] = wipByDate[startDate] + 1;
+	          }
+	          var newDate = startDate.setDate(startDate.getDate() + 1);
+	          startDate = new Date(newDate);
+	        }
+	      });
+	      var keys = Object.keys(wipByDate);
+	      var values = keys.map(function (v) {
+	        return wipByDate[v];
+	      });
+	      return values.reduce(function (a, b) {
+	        return a + b;
+	      }) / values.length;
+	    }
+	  }, {
 	    key: 'toDays',
 	    value: function toDays(miliseconds) {
 	      return miliseconds / 1000 / 60 / 60 / 24;
@@ -21986,7 +22030,11 @@
 	    _this._sort = _this._sort.bind(_this);
 	    _this._showEditor = _this._showEditor.bind(_this);
 	    _this._save = _this._save.bind(_this);
-	    _this.chartData = new _MonteCarlo2.default(_this.state.data).getData();
+	    var data = new _MonteCarlo2.default(_this.state.data).getData();
+	    var wip = _this.calculateWorkInProgress(_this.state.data);
+	    _this.chartData = Object.keys(data).map(function (k, i) {
+	      return [k / wip, data[k]];
+	    });
 	    return _this;
 	  }
 	
@@ -22042,7 +22090,7 @@
 	        }), _react2.default.createElement(
 	          'td',
 	          null,
-	          _this2.toDays(row[1] - row[0]),
+	          _this2.toDays(row[1] - row[0]) + 1,
 	          ' '
 	        ));
 	      }))]), _react2.default.createElement(_Chart2.default, { data: this.chartData }));
@@ -22142,9 +22190,7 @@
 	        },
 	        series: [{
 	          name: 'Time',
-	          data: Object.keys(data).map(function (k, i) {
-	            return [k, data[k]];
-	          })
+	          data: data
 	        }]
 	      };
 	    }
@@ -22544,31 +22590,6 @@
 	      return miliseconds / 1000 / 60 / 60 / 24;
 	    }
 	  }, {
-	    key: "calculateWorkInProgress",
-	    value: function calculateWorkInProgress(data) {
-	      var wipByDate = {};
-	      data.forEach(function (range) {
-	        var startDate = range[0];
-	        while (startDate < range[1]) {
-	          if (wipByDate[startDate] === undefined) {
-	            wipByDate[startDate] = 1;
-	          } else {
-	            wipByDate[startDate] = wipByDate[startDate] + 1;
-	          }
-	          var newDate = startDate.setDate(startDate.getDate() + 1);
-	          startDate = new Date(newDate);
-	        }
-	      });
-	
-	      var keys = Object.keys(wipByDate);
-	      var values = keys.map(function (v) {
-	        return wipByDate[v];
-	      });
-	      return values.reduce(function (a, b) {
-	        return a + b;
-	      }) / values.length;
-	    }
-	  }, {
 	    key: "calculateFrequencies",
 	    value: function calculateFrequencies(data) {
 	      var counts = {};
@@ -22584,9 +22605,9 @@
 	    value: function getData() {
 	      var _this = this;
 	
-	      var storiesToEstimate = 40;
+	      var storiesToEstimate = 10;
 	      var results = this.monteCarlo(storiesToEstimate, this.data.map(function (arr) {
-	        return _this.toDays(arr[1] - arr[0]);
+	        return _this.toDays(arr[1] - arr[0]) + 1;
 	      }));
 	      return this.calculateFrequencies(results);
 	    }
@@ -22596,7 +22617,6 @@
 	    _classCallCheck(this, MonteCarlo);
 	
 	    this.data = data;
-	    this.workInProgress = this.calculateWorkInProgress(data);
 	  }
 	
 	  _createClass(MonteCarlo, [{
