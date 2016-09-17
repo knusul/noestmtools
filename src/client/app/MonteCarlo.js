@@ -1,7 +1,5 @@
 class MonteCarlo{
-  toDays(miliseconds){
-    return miliseconds / 1000 / 60 / 60 / 24
-  }
+
   calculateFrequencies(data){
     var counts = {};
 
@@ -12,18 +10,31 @@ class MonteCarlo{
     return counts;
   }
 
+  workingDaysBetween(from, to){
+    var fromCopy = new Date(from.getTime());
+    var n=1;
+    while(fromCopy<to){
+      if( fromCopy.getDay() >0 && fromCopy.getDay() <6) n++;
+      fromCopy.setDate(fromCopy.getDate()+1) ;
+    }
+    return n;
+  }
+
   getData(){
-    var storiesToEstimate = 10;
-    var results = this.monteCarlo(storiesToEstimate, this.data.map(arr => this.toDays(arr[1]-arr[0])+1));
+    var workingDays = this.data.map(arr => this.workingDaysBetween(...arr));
+    var results = this.monteCarlo(this.storiesToEstimate, workingDays);
     return this.calculateFrequencies(results);
   }
 
   constructor(data){
+    this.mtIterations = 1000000;
+    this.storiesToEstimate = 10;
     this.data = data;
   }
+
   monteCarlo(stories, leadTimes){
     var results = [];
-    [...Array(100000).keys()].map((i) =>{
+    [...Array(this.mtIterations).keys()].map((i) =>{
       var storiesToDo = stories;
       var totalDays = 0;
       while(storiesToDo > 0){

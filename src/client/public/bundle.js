@@ -22014,11 +22014,6 @@
 	        return a + b;
 	      }) / values.length;
 	    }
-	  }, {
-	    key: 'toDays',
-	    value: function toDays(miliseconds) {
-	      return miliseconds / 1000 / 60 / 60 / 24;
-	    }
 	  }]);
 	
 	  function Excel(props) {
@@ -22030,7 +22025,8 @@
 	    _this._sort = _this._sort.bind(_this);
 	    _this._showEditor = _this._showEditor.bind(_this);
 	    _this._save = _this._save.bind(_this);
-	    var data = new _MonteCarlo2.default(_this.state.data).getData();
+	    _this.monteCarlo = new _MonteCarlo2.default(_this.state.data);
+	    var data = _this.monteCarlo.getData();
 	    var wip = _this.calculateWorkInProgress(_this.state.data);
 	    _this.chartData = Object.keys(data).map(function (k, i) {
 	      return [k / wip, data[k]];
@@ -22090,7 +22086,7 @@
 	        }), _react2.default.createElement(
 	          'td',
 	          null,
-	          _this2.toDays(row[1] - row[0]) + 1,
+	          _this2.monteCarlo.workingDaysBetween(row[0], row[1]),
 	          ' '
 	        ));
 	      }))]), _react2.default.createElement(_Chart2.default, { data: this.chartData }));
@@ -22585,11 +22581,6 @@
 	
 	var MonteCarlo = function () {
 	  _createClass(MonteCarlo, [{
-	    key: "toDays",
-	    value: function toDays(miliseconds) {
-	      return miliseconds / 1000 / 60 / 60 / 24;
-	    }
-	  }, {
 	    key: "calculateFrequencies",
 	    value: function calculateFrequencies(data) {
 	      var counts = {};
@@ -22601,14 +22592,25 @@
 	      return counts;
 	    }
 	  }, {
+	    key: "workingDaysBetween",
+	    value: function workingDaysBetween(from, to) {
+	      var fromCopy = new Date(from.getTime());
+	      var n = 1;
+	      while (fromCopy < to) {
+	        if (fromCopy.getDay() > 0 && fromCopy.getDay() < 6) n++;
+	        fromCopy.setDate(fromCopy.getDate() + 1);
+	      }
+	      return n;
+	    }
+	  }, {
 	    key: "getData",
 	    value: function getData() {
 	      var _this = this;
 	
-	      var storiesToEstimate = 10;
-	      var results = this.monteCarlo(storiesToEstimate, this.data.map(function (arr) {
-	        return _this.toDays(arr[1] - arr[0]) + 1;
-	      }));
+	      var workingDays = this.data.map(function (arr) {
+	        return _this.workingDaysBetween.apply(_this, _toConsumableArray(arr));
+	      });
+	      var results = this.monteCarlo(this.storiesToEstimate, workingDays);
 	      return this.calculateFrequencies(results);
 	    }
 	  }]);
@@ -22616,6 +22618,8 @@
 	  function MonteCarlo(data) {
 	    _classCallCheck(this, MonteCarlo);
 	
+	    this.mtIterations = 1000000;
+	    this.storiesToEstimate = 10;
 	    this.data = data;
 	  }
 	
@@ -22623,7 +22627,7 @@
 	    key: "monteCarlo",
 	    value: function monteCarlo(stories, leadTimes) {
 	      var results = [];
-	      [].concat(_toConsumableArray(Array(100000).keys())).map(function (i) {
+	      [].concat(_toConsumableArray(Array(this.mtIterations).keys())).map(function (i) {
 	        var storiesToDo = stories;
 	        var totalDays = 0;
 	        while (storiesToDo > 0) {
