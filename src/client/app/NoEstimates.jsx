@@ -1,4 +1,5 @@
 import React from 'react';
+import Papa from 'papaparse'
 import  Chart  from './Chart.jsx';
 import MonteCarlo from './MonteCarlo.js'
 
@@ -67,6 +68,18 @@ class Excel extends React.Component {
     this.setState(edit)
   }
 
+  handleUpload(e){
+    var fr = new FileReader();
+    fr.onload = (e) =>{
+      var text = e.target.result;
+      var data = Papa.parse(text, {header: true, delimiter: ','});
+      this.chartData(data.data.map((data) => [data.From, data.To]))
+    }
+    var file = e.target.files[0];
+    fr.readAsBinaryString(file);
+  
+  }
+
   render(){
     return React.DOM.div(null, React.DOM.table(null,[
         React.DOM.thead({onClick: this._sort},
@@ -91,6 +104,12 @@ class Excel extends React.Component {
             }))
 
       ]),
+      React.DOM.input({
+        type: 'file',
+        name: "upload_file",
+        className: 'cycle_times',
+        onChange: this.handleUpload,
+      }),
     <Chart data = {this.chartData }></Chart>
         );
   }
