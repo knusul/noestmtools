@@ -25,7 +25,6 @@ class Excel extends React.Component {
     var keys = Object.keys(wipByDate);
     var values = keys.map(function(v) { return wipByDate[v]; });
     return values.reduce((a, b) => a+b) / values.length;
-
   }
   constructor(props){
     super(props);
@@ -33,6 +32,11 @@ class Excel extends React.Component {
     this._sort = this._sort.bind(this);
     this._showEditor = this._showEditor.bind(this);
     this._save = this._save.bind(this);
+    this.handleUpload = this.handleUpload.bind(this);
+    this.runSimulation();
+  }
+
+  runSimulation(){
     this.monteCarlo = new MonteCarlo(this.state.data);
     var data = this.monteCarlo.getData(); 
     var wip = this.calculateWorkInProgress(this.state.data);
@@ -72,8 +76,9 @@ class Excel extends React.Component {
     var fr = new FileReader();
     fr.onload = (e) =>{
       var text = e.target.result;
-      var data = Papa.parse(text, {header: true, delimiter: ','});
-      this.chartData(data.data.map((data) => [data.From, data.To]))
+      var data = Papa.parse(text, { delimiter: ','}).data.map((data) => [new Date(data[0]), new Date(data[1] ) ]);
+      this.setState({data: data});
+      this.runSimulation();
     }
     var file = e.target.files[0];
     fr.readAsBinaryString(file);
