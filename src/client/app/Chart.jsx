@@ -8,10 +8,10 @@ class Chart extends React.Component{
   }
   constructor(props){
     super(props);
-    this.state = { data: props.data };
   }
   chartConfig() {
-    var data = this.state.data;
+    var data = this.props.data;
+    console.log('data', data);
     return {
       title: {
         text: 'Time forecast',

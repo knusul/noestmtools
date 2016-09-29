@@ -1,3 +1,13 @@
+export function workingDaysBetween(from, to){
+   var fromCopy = new Date(from.getTime());
+   var n=1;
+   while(fromCopy<to){
+     if( fromCopy.getDay() >0 && fromCopy.getDay() <6) n++;
+     fromCopy.setDate(fromCopy.getDate()+1) ;
+   }
+   return n;
+ }
+
 class MonteCarlo{
 
   calculateFrequencies(data){
@@ -10,18 +20,8 @@ class MonteCarlo{
     return counts;
   }
 
-  workingDaysBetween(from, to){
-    var fromCopy = new Date(from.getTime());
-    var n=1;
-    while(fromCopy<to){
-      if( fromCopy.getDay() >0 && fromCopy.getDay() <6) n++;
-      fromCopy.setDate(fromCopy.getDate()+1) ;
-    }
-    return n;
-  }
-
   getData(){
-    var workingDays = this.data.map(arr => this.workingDaysBetween(...arr));
+    var workingDays = this.data.map(arr => workingDaysBetween(...arr));
     var results = this.monteCarlo(this.storiesToEstimate, workingDays);
     return this.calculateFrequencies(results);
   }

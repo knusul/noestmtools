@@ -194,40 +194,25 @@
 	var cachedSetTimeout;
 	var cachedClearTimeout;
 	
-	function defaultSetTimout() {
-	    throw new Error('setTimeout has not been defined');
-	}
-	function defaultClearTimeout () {
-	    throw new Error('clearTimeout has not been defined');
-	}
 	(function () {
 	    try {
-	        if (typeof setTimeout === 'function') {
-	            cachedSetTimeout = setTimeout;
-	        } else {
-	            cachedSetTimeout = defaultSetTimout;
-	        }
+	        cachedSetTimeout = setTimeout;
 	    } catch (e) {
-	        cachedSetTimeout = defaultSetTimout;
+	        cachedSetTimeout = function () {
+	            throw new Error('setTimeout is not defined');
+	        }
 	    }
 	    try {
-	        if (typeof clearTimeout === 'function') {
-	            cachedClearTimeout = clearTimeout;
-	        } else {
-	            cachedClearTimeout = defaultClearTimeout;
-	        }
+	        cachedClearTimeout = clearTimeout;
 	    } catch (e) {
-	        cachedClearTimeout = defaultClearTimeout;
+	        cachedClearTimeout = function () {
+	            throw new Error('clearTimeout is not defined');
+	        }
 	    }
 	} ())
 	function runTimeout(fun) {
 	    if (cachedSetTimeout === setTimeout) {
 	        //normal enviroments in sane situations
-	        return setTimeout(fun, 0);
-	    }
-	    // if setTimeout wasn't available but was latter defined
-	    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
-	        cachedSetTimeout = setTimeout;
 	        return setTimeout(fun, 0);
 	    }
 	    try {
@@ -248,11 +233,6 @@
 	function runClearTimeout(marker) {
 	    if (cachedClearTimeout === clearTimeout) {
 	        //normal enviroments in sane situations
-	        return clearTimeout(marker);
-	    }
-	    // if clearTimeout wasn't available but was latter defined
-	    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
-	        cachedClearTimeout = clearTimeout;
 	        return clearTimeout(marker);
 	    }
 	    try {
@@ -21981,6 +21961,10 @@
 	
 	var _MonteCarlo2 = _interopRequireDefault(_MonteCarlo);
 	
+	var _dateformat = __webpack_require__(/*! dateformat */ 178);
+	
+	var _dateformat2 = _interopRequireDefault(_dateformat);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -21996,9 +21980,9 @@
 	
 	  _createClass(Excel, [{
 	    key: 'calculateWorkInProgress',
-	    value: function calculateWorkInProgress(data) {
+	    value: function calculateWorkInProgress(dateTuples) {
 	      var wipByDate = {};
-	      data.forEach(function (range) {
+	      dateTuples.forEach(function (range) {
 	        var startDate = range[0];
 	        while (startDate < range[1]) {
 	          if (wipByDate[startDate] === undefined) {
@@ -22030,27 +22014,17 @@
 	    _this._showEditor = _this._showEditor.bind(_this);
 	    _this._save = _this._save.bind(_this);
 	    _this.handleUpload = _this.handleUpload.bind(_this);
-	    _this.runSimulation();
 	    return _this;
 	  }
 	
 	  _createClass(Excel, [{
 	    key: 'runSimulation',
 	    value: function runSimulation() {
-	      this.monteCarlo = new _MonteCarlo2.default(this.state.data);
-	      var data = this.monteCarlo.getData();
+	      var data = new _MonteCarlo2.default(this.state.data).getData();
 	      var wip = this.calculateWorkInProgress(this.state.data);
-	      this.chartData = Object.keys(data).map(function (k, i) {
+	      return Object.keys(data).map(function (k, i) {
 	        return [k / wip, data[k]];
 	      });
-	    }
-	  }, {
-	    key: 'calculateDeviation',
-	    value: function calculateDeviation(array) {
-	      var sum = array.reduce(function (sum, value) {
-	        return sum + value;
-	      }, 0);
-	      return sum / array.length;
 	    }
 	  }, {
 	    key: '_save',
@@ -22086,7 +22060,9 @@
 	      var fr = new FileReader();
 	      fr.onload = function (e) {
 	        var text = e.target.result;
-	        var data = _papaparse2.default.parse(text, { delimiter: ',' }).data.map(function (data) {
+	        var data = _papaparse2.default.parse(text, { delimiter: ',' }).data.filter(function (e) {
+	          return e.length > 1;
+	        }).map(function (data) {
 	          return [new Date(data[0]), new Date(data[1])];
 	        });
 	        _this2.setState({ data: data });
@@ -22109,19 +22085,19 @@
 	          if (edit && edit.row === rowidx && edit.cell === idx) {
 	            content = _react2.default.DOM.form({ onSubmit: _this3._save }, _react2.default.DOM.input({ type: 'text', defaultValue: content }));
 	          }
-	          return _react2.default.DOM.td({ key: idx, 'data-row': rowidx }, content);
+	          return _react2.default.DOM.td({ key: idx, 'data-row': rowidx }, (0, _dateformat2.default)(content, 'yyyy-mm-dd'));
 	        }), _react2.default.createElement(
 	          'td',
 	          null,
-	          _this3.monteCarlo.workingDaysBetween(row[0], row[1]),
-	          ' '
+	          (0, _MonteCarlo.workingDaysBetween)(row[0], row[1]),
+	          ' days '
 	        ));
 	      }))]), _react2.default.DOM.input({
 	        type: 'file',
 	        name: "upload_file",
 	        className: 'cycle_times',
 	        onChange: this.handleUpload
-	      }), _react2.default.createElement(_Chart2.default, { data: this.chartData }));
+	      }), _react2.default.createElement(_Chart2.default, { data: this.runSimulation() }));
 	    }
 	  }]);
 	
@@ -22134,7 +22110,6 @@
 	  sortby: null,
 	  descending: false,
 	  edit: null,
-	  chartData: [],
 	  workInProgress: 0
 	};
 	exports.default = Excel;
@@ -23593,16 +23568,14 @@
 	  function Chart(props) {
 	    _classCallCheck(this, Chart);
 	
-	    var _this = _possibleConstructorReturn(this, (Chart.__proto__ || Object.getPrototypeOf(Chart)).call(this, props));
-	
-	    _this.state = { data: props.data };
-	    return _this;
+	    return _possibleConstructorReturn(this, (Chart.__proto__ || Object.getPrototypeOf(Chart)).call(this, props));
 	  }
 	
 	  _createClass(Chart, [{
 	    key: 'chartConfig',
 	    value: function chartConfig() {
-	      var data = this.state.data;
+	      var data = this.props.data;
+	      console.log('data', data);
 	      return {
 	        title: {
 	          text: 'Time forecast',
@@ -24019,9 +23992,21 @@
 	
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 	
+	exports.workingDaysBetween = workingDaysBetween;
+	
 	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	function workingDaysBetween(from, to) {
+	  var fromCopy = new Date(from.getTime());
+	  var n = 1;
+	  while (fromCopy < to) {
+	    if (fromCopy.getDay() > 0 && fromCopy.getDay() < 6) n++;
+	    fromCopy.setDate(fromCopy.getDate() + 1);
+	  }
+	  return n;
+	}
 	
 	var MonteCarlo = function () {
 	  _createClass(MonteCarlo, [{
@@ -24036,23 +24021,10 @@
 	      return counts;
 	    }
 	  }, {
-	    key: "workingDaysBetween",
-	    value: function workingDaysBetween(from, to) {
-	      var fromCopy = new Date(from.getTime());
-	      var n = 1;
-	      while (fromCopy < to) {
-	        if (fromCopy.getDay() > 0 && fromCopy.getDay() < 6) n++;
-	        fromCopy.setDate(fromCopy.getDate() + 1);
-	      }
-	      return n;
-	    }
-	  }, {
 	    key: "getData",
 	    value: function getData() {
-	      var _this = this;
-	
 	      var workingDays = this.data.map(function (arr) {
-	        return _this.workingDaysBetween.apply(_this, _toConsumableArray(arr));
+	        return workingDaysBetween.apply(undefined, _toConsumableArray(arr));
 	      });
 	      var results = this.monteCarlo(this.storiesToEstimate, workingDays);
 	      return this.calculateFrequencies(results);
@@ -24089,6 +24061,241 @@
 	}();
 	
 	exports.default = MonteCarlo;
+
+/***/ },
+/* 178 */
+/*!****************************************!*\
+  !*** ./~/dateformat/lib/dateformat.js ***!
+  \****************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_RESULT__;/*
+	 * Date Format 1.2.3
+	 * (c) 2007-2009 Steven Levithan <stevenlevithan.com>
+	 * MIT license
+	 *
+	 * Includes enhancements by Scott Trenda <scott.trenda.net>
+	 * and Kris Kowal <cixar.com/~kris.kowal/>
+	 *
+	 * Accepts a date, a mask, or a date and a mask.
+	 * Returns a formatted version of the given date.
+	 * The date defaults to the current date/time.
+	 * The mask defaults to dateFormat.masks.default.
+	 */
+	
+	(function(global) {
+	  'use strict';
+	
+	  var dateFormat = (function() {
+	      var token = /d{1,4}|m{1,4}|yy(?:yy)?|([HhMsTt])\1?|[LloSZWN]|'[^']*'|'[^']*'/g;
+	      var timezone = /\b(?:[PMCEA][SDP]T|(?:Pacific|Mountain|Central|Eastern|Atlantic) (?:Standard|Daylight|Prevailing) Time|(?:GMT|UTC)(?:[-+]\d{4})?)\b/g;
+	      var timezoneClip = /[^-+\dA-Z]/g;
+	  
+	      // Regexes and supporting functions are cached through closure
+	      return function (date, mask, utc, gmt) {
+	  
+	        // You can't provide utc if you skip other args (use the 'UTC:' mask prefix)
+	        if (arguments.length === 1 && kindOf(date) === 'string' && !/\d/.test(date)) {
+	          mask = date;
+	          date = undefined;
+	        }
+	  
+	        date = date || new Date;
+	  
+	        if(!(date instanceof Date)) {
+	          date = new Date(date);
+	        }
+	  
+	        if (isNaN(date)) {
+	          throw TypeError('Invalid date');
+	        }
+	  
+	        mask = String(dateFormat.masks[mask] || mask || dateFormat.masks['default']);
+	  
+	        // Allow setting the utc/gmt argument via the mask
+	        var maskSlice = mask.slice(0, 4);
+	        if (maskSlice === 'UTC:' || maskSlice === 'GMT:') {
+	          mask = mask.slice(4);
+	          utc = true;
+	          if (maskSlice === 'GMT:') {
+	            gmt = true;
+	          }
+	        }
+	  
+	        var _ = utc ? 'getUTC' : 'get';
+	        var d = date[_ + 'Date']();
+	        var D = date[_ + 'Day']();
+	        var m = date[_ + 'Month']();
+	        var y = date[_ + 'FullYear']();
+	        var H = date[_ + 'Hours']();
+	        var M = date[_ + 'Minutes']();
+	        var s = date[_ + 'Seconds']();
+	        var L = date[_ + 'Milliseconds']();
+	        var o = utc ? 0 : date.getTimezoneOffset();
+	        var W = getWeek(date);
+	        var N = getDayOfWeek(date);
+	        var flags = {
+	          d:    d,
+	          dd:   pad(d),
+	          ddd:  dateFormat.i18n.dayNames[D],
+	          dddd: dateFormat.i18n.dayNames[D + 7],
+	          m:    m + 1,
+	          mm:   pad(m + 1),
+	          mmm:  dateFormat.i18n.monthNames[m],
+	          mmmm: dateFormat.i18n.monthNames[m + 12],
+	          yy:   String(y).slice(2),
+	          yyyy: y,
+	          h:    H % 12 || 12,
+	          hh:   pad(H % 12 || 12),
+	          H:    H,
+	          HH:   pad(H),
+	          M:    M,
+	          MM:   pad(M),
+	          s:    s,
+	          ss:   pad(s),
+	          l:    pad(L, 3),
+	          L:    pad(Math.round(L / 10)),
+	          t:    H < 12 ? 'a'  : 'p',
+	          tt:   H < 12 ? 'am' : 'pm',
+	          T:    H < 12 ? 'A'  : 'P',
+	          TT:   H < 12 ? 'AM' : 'PM',
+	          Z:    gmt ? 'GMT' : utc ? 'UTC' : (String(date).match(timezone) || ['']).pop().replace(timezoneClip, ''),
+	          o:    (o > 0 ? '-' : '+') + pad(Math.floor(Math.abs(o) / 60) * 100 + Math.abs(o) % 60, 4),
+	          S:    ['th', 'st', 'nd', 'rd'][d % 10 > 3 ? 0 : (d % 100 - d % 10 != 10) * d % 10],
+	          W:    W,
+	          N:    N
+	        };
+	  
+	        return mask.replace(token, function (match) {
+	          if (match in flags) {
+	            return flags[match];
+	          }
+	          return match.slice(1, match.length - 1);
+	        });
+	      };
+	    })();
+	
+	  dateFormat.masks = {
+	    'default':               'ddd mmm dd yyyy HH:MM:ss',
+	    'shortDate':             'm/d/yy',
+	    'mediumDate':            'mmm d, yyyy',
+	    'longDate':              'mmmm d, yyyy',
+	    'fullDate':              'dddd, mmmm d, yyyy',
+	    'shortTime':             'h:MM TT',
+	    'mediumTime':            'h:MM:ss TT',
+	    'longTime':              'h:MM:ss TT Z',
+	    'isoDate':               'yyyy-mm-dd',
+	    'isoTime':               'HH:MM:ss',
+	    'isoDateTime':           'yyyy-mm-dd\'T\'HH:MM:sso',
+	    'isoUtcDateTime':        'UTC:yyyy-mm-dd\'T\'HH:MM:ss\'Z\'',
+	    'expiresHeaderFormat':   'ddd, dd mmm yyyy HH:MM:ss Z'
+	  };
+	
+	  // Internationalization strings
+	  dateFormat.i18n = {
+	    dayNames: [
+	      'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat',
+	      'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
+	    ],
+	    monthNames: [
+	      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+	      'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'
+	    ]
+	  };
+	
+	function pad(val, len) {
+	  val = String(val);
+	  len = len || 2;
+	  while (val.length < len) {
+	    val = '0' + val;
+	  }
+	  return val;
+	}
+	
+	/**
+	 * Get the ISO 8601 week number
+	 * Based on comments from
+	 * http://techblog.procurios.nl/k/n618/news/view/33796/14863/Calculate-ISO-8601-week-and-year-in-javascript.html
+	 *
+	 * @param  {Object} `date`
+	 * @return {Number}
+	 */
+	function getWeek(date) {
+	  // Remove time components of date
+	  var targetThursday = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+	
+	  // Change date to Thursday same week
+	  targetThursday.setDate(targetThursday.getDate() - ((targetThursday.getDay() + 6) % 7) + 3);
+	
+	  // Take January 4th as it is always in week 1 (see ISO 8601)
+	  var firstThursday = new Date(targetThursday.getFullYear(), 0, 4);
+	
+	  // Change date to Thursday same week
+	  firstThursday.setDate(firstThursday.getDate() - ((firstThursday.getDay() + 6) % 7) + 3);
+	
+	  // Check if daylight-saving-time-switch occured and correct for it
+	  var ds = targetThursday.getTimezoneOffset() - firstThursday.getTimezoneOffset();
+	  targetThursday.setHours(targetThursday.getHours() - ds);
+	
+	  // Number of weeks between target Thursday and first Thursday
+	  var weekDiff = (targetThursday - firstThursday) / (86400000*7);
+	  return 1 + Math.floor(weekDiff);
+	}
+	
+	/**
+	 * Get ISO-8601 numeric representation of the day of the week
+	 * 1 (for Monday) through 7 (for Sunday)
+	 * 
+	 * @param  {Object} `date`
+	 * @return {Number}
+	 */
+	function getDayOfWeek(date) {
+	  var dow = date.getDay();
+	  if(dow === 0) {
+	    dow = 7;
+	  }
+	  return dow;
+	}
+	
+	/**
+	 * kind-of shortcut
+	 * @param  {*} val
+	 * @return {String}
+	 */
+	function kindOf(val) {
+	  if (val === null) {
+	    return 'null';
+	  }
+	
+	  if (val === undefined) {
+	    return 'undefined';
+	  }
+	
+	  if (typeof val !== 'object') {
+	    return typeof val;
+	  }
+	
+	  if (Array.isArray(val)) {
+	    return 'array';
+	  }
+	
+	  return {}.toString.call(val)
+	    .slice(8, -1).toLowerCase();
+	};
+	
+	
+	
+	  if (true) {
+	    !(__WEBPACK_AMD_DEFINE_RESULT__ = function () {
+	      return dateFormat;
+	    }.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+	  } else if (typeof exports === 'object') {
+	    module.exports = dateFormat;
+	  } else {
+	    global.dateFormat = dateFormat;
+	  }
+	})(this);
+
 
 /***/ }
 /******/ ]);

@@ -2,13 +2,15 @@ import React from 'react';
 import Papa from 'papaparse'
 import  Chart  from './Chart.jsx';
 import MonteCarlo from './MonteCarlo.js'
+import { workingDaysBetween} from './MonteCarlo.js'
+import Dateformat  from 'dateformat'
 
 var headers = ["Work Start", "Work Done", "CycleTime"];
 
 class Excel extends React.Component {
-  calculateWorkInProgress(data){
+  calculateWorkInProgress(dateTuples){
     var wipByDate = {}
-    data.forEach(range =>{
+    dateTuples.forEach(range =>{
       var startDate = range[0];
       while(startDate < range[1])
       {
@@ -26,6 +28,7 @@ class Excel extends React.Component {
     var values = keys.map(function(v) { return wipByDate[v]; });
     return values.reduce((a, b) => a+b) / values.length;
   }
+
   constructor(props){
     super(props);
     this.state = {data: props.initialData};
@@ -33,19 +36,12 @@ class Excel extends React.Component {
     this._showEditor = this._showEditor.bind(this);
     this._save = this._save.bind(this);
     this.handleUpload = this.handleUpload.bind(this);
-    this.runSimulation();
   }
 
   runSimulation(){
-    this.monteCarlo = new MonteCarlo(this.state.data);
-    var data = this.monteCarlo.getData(); 
+    var data = new MonteCarlo(this.state.data).getData();
     var wip = this.calculateWorkInProgress(this.state.data);
-    this.chartData = Object.keys(data).map((k, i) => [k/wip, data[k]] )
-  }
-
-  calculateDeviation(array){
-    var sum = array.reduce((sum, value) => sum + value, 0);
-    return sum/array.length
+    return Object.keys(data).map((k, i) => [k/wip, data[k]] )
   }
 
   _save(e){
@@ -76,7 +72,7 @@ class Excel extends React.Component {
     var fr = new FileReader();
     fr.onload = (e) =>{
       var text = e.target.result;
-      var data = Papa.parse(text, { delimiter: ','}).data.map((data) => [new Date(data[0]), new Date(data[1] ) ]);
+      var data = Papa.parse(text, { delimiter: ','}).data.filter(e => e.length > 1).map((data) => [new Date(data[0]), new Date(data[1] ) ]);
       this.setState({data: data});
       this.runSimulation();
     }
@@ -103,8 +99,8 @@ class Excel extends React.Component {
                         React.DOM.input({type: 'text', defaultValue: content})
                         )
                     }
-                    return React.DOM.td({key: idx, 'data-row': rowidx}, content)
-                  }), <td>{ this.monteCarlo.workingDaysBetween(row[0],row[1]) } </td>
+                    return React.DOM.td({key: idx, 'data-row': rowidx}, Dateformat(content, 'yyyy-mm-dd'))
+                  }), <td>{ workingDaysBetween(row[0],row[1]) } days </td>
                 )
             }))
 
@@ -115,7 +111,7 @@ class Excel extends React.Component {
         className: 'cycle_times',
         onChange: this.handleUpload,
       }),
-    <Chart data = {this.chartData }></Chart>
+    <Chart data = { this.runSimulation() }></Chart>
         );
   }
 }
@@ -125,7 +121,6 @@ Excel.propTypes = {
   sortby: null,
   descending: false,
   edit: null,
-  chartData: [],
   workInProgress: 0,
 }
 export default Excel;
