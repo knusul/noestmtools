@@ -11,7 +11,6 @@ class Chart extends React.Component{
   }
   chartConfig() {
     var data = this.props.data;
-    console.log('data', data);
     return {
       title: {
         text: 'Time forecast',

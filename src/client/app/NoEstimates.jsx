@@ -11,7 +11,7 @@ class Excel extends React.Component {
   calculateWorkInProgress(dateTuples){
     var wipByDate = {}
     dateTuples.forEach(range =>{
-      var startDate = range[0];
+      var startDate = new Date(range[0].getTime());
       while(startDate < range[1])
       {
         if(wipByDate[startDate] === undefined){
@@ -31,41 +31,17 @@ class Excel extends React.Component {
 
   constructor(props){
     super(props);
-    this.state = {data: props.initialData};
-    this._sort = this._sort.bind(this);
-    this._showEditor = this._showEditor.bind(this);
-    this._save = this._save.bind(this);
+    this.state = {data: props.initialData, storiesToEstm: 10};
+    this.onStoriesToEstmSubmit = this.onStoriesToEstmSubmit.bind(this);
     this.handleUpload = this.handleUpload.bind(this);
   }
 
   runSimulation(){
-    var data = new MonteCarlo(this.state.data).getData();
+    var results = new MonteCarlo(this.state.data, this.state.storiesToEstm).runSimulation();
+    var data = results.frequencies;
+    var the90thPercentile = results.the90thPercentile;
     var wip = this.calculateWorkInProgress(this.state.data);
-    return Object.keys(data).map((k, i) => [k/wip, data[k]] )
-  }
-
-  _save(e){
-    e.preventDefault();
-    var input =  e.target.firstChild;
-    var data =this.state.data.slice();
-    data[this.state.edit.row][this.state.edit.cell] = input.value;
-    this.setState({edit: null, data: data})
-  }
-
-  _sort(e){
-    var descending = this.state.sortby === column && !this.state.descending;
-    var column = e.target.cellIndex;
-    var data = this.state.data.slice()
-    data.sort((a,b) =>{
-      return descending
-      ? a[column] > b[column] ? 1: -1
-      : a[column] < b[column] ? 1: -1
-    });
-    this.setState({data: data, sortby: column, descending: descending});
-  }
-  _showEditor(e){
-    var edit = {edit: {row: parseInt(e.target.dataset.row, 10), cell: e.target.cellIndex} }
-    this.setState(edit)
+    return [Math.round(the90thPercentile/wip), Object.keys(data).map((k, i) => [k/wip, data[k]] )]
   }
 
   handleUpload(e){
@@ -81,24 +57,25 @@ class Excel extends React.Component {
   
   }
 
+  onStoriesToEstmSubmit(e){
+    e.preventDefault();
+    var storiesToEstm =  Number(e.target.firstChild.value);
+    this.setState({storiesToEstm: storiesToEstm});
+  }
+
   render(){
-    return React.DOM.div(null, React.DOM.table(null,[
+    var [the90Percentile, data] = this.runSimulation();
+    return React.DOM.div(null, <div>Stories to estimate: <form onSubmit={this.onStoriesToEstmSubmit} ><input type='text' defaultValue={"10"}/></form></div> ,React.DOM.table(null,[
         React.DOM.thead({onClick: this._sort},
           React.DOM.tr(null,
             this.props.headers.map((title, idx) => React.DOM.th({key: idx}, this.state.sortby === idx? title+= this.state.descending? '\u2191': '\u2193': title))
             )),
-            React.DOM.tbody({onDoubleClick: this._showEditor},this.state.data.map((row, rowidx) => {
+            React.DOM.tbody(null,this.state.data.map((row, rowidx) => {
              return  React.DOM.tr({key: rowidx},
                 row.map((cell, idx) =>
                   {
                     var edit = this.state.edit;
                     var content = cell.toString();
-                    if( edit && edit.row === rowidx && edit.cell === idx)
-                    {
-                      content = React.DOM.form({onSubmit: this._save},
-                        React.DOM.input({type: 'text', defaultValue: content})
-                        )
-                    }
                     return React.DOM.td({key: idx, 'data-row': rowidx}, Dateformat(content, 'yyyy-mm-dd'))
                   }), <td>{ workingDaysBetween(row[0],row[1]) } days </td>
                 )
@@ -111,7 +88,8 @@ class Excel extends React.Component {
         className: 'cycle_times',
         onChange: this.handleUpload,
       }),
-    <Chart data = { this.runSimulation() }></Chart>
+    <Chart data = { data }></Chart>,
+      <div><h3>The 90th Percentile: {the90Percentile}</h3></div>
         );
   }
 }
@@ -122,5 +100,6 @@ Excel.propTypes = {
   descending: false,
   edit: null,
   workInProgress: 0,
+  storiesToEstm: React.PropTypes.number,
 }
 export default Excel;

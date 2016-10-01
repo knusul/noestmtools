@@ -9,7 +9,6 @@ export function workingDaysBetween(from, to){
  }
 
 class MonteCarlo{
-
   calculateFrequencies(data){
     var counts = {};
 
@@ -20,16 +19,17 @@ class MonteCarlo{
     return counts;
   }
 
-  getData(){
-    var workingDays = this.data.map(arr => workingDaysBetween(...arr));
-    var results = this.monteCarlo(this.storiesToEstimate, workingDays);
-    return this.calculateFrequencies(results);
+  runSimulation(){
+    var simulationResults =  this.monteCarlo(this.storiesToEstimate, this.workingDays);
+    return {
+      frequencies: this.calculateFrequencies(simulationResults),
+      the90thPercentile: simulationResults.sort()[Math.round(simulationResults.length * 95/100)]}
   }
 
-  constructor(data){
-    this.mtIterations = 1000000;
-    this.storiesToEstimate = 10;
-    this.data = data;
+  constructor(data, storiesToEstimate){
+    this.mtIterations = 100000;
+    this.storiesToEstimate = storiesToEstimate;
+    this.workingDays = data.map(arr => workingDaysBetween(...arr));
   }
 
   monteCarlo(stories, leadTimes){

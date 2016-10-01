@@ -21943,6 +21943,8 @@
 	  value: true
 	});
 	
+	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+	
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 	
 	var _react = __webpack_require__(/*! react */ 1);
@@ -21983,7 +21985,7 @@
 	    value: function calculateWorkInProgress(dateTuples) {
 	      var wipByDate = {};
 	      dateTuples.forEach(function (range) {
-	        var startDate = range[0];
+	        var startDate = new Date(range[0].getTime());
 	        while (startDate < range[1]) {
 	          if (wipByDate[startDate] === undefined) {
 	            wipByDate[startDate] = 1;
@@ -22009,10 +22011,8 @@
 	
 	    var _this = _possibleConstructorReturn(this, (Excel.__proto__ || Object.getPrototypeOf(Excel)).call(this, props));
 	
-	    _this.state = { data: props.initialData };
-	    _this._sort = _this._sort.bind(_this);
-	    _this._showEditor = _this._showEditor.bind(_this);
-	    _this._save = _this._save.bind(_this);
+	    _this.state = { data: props.initialData, storiesToEstm: 10 };
+	    _this.onStoriesToEstmSubmit = _this.onStoriesToEstmSubmit.bind(_this);
 	    _this.handleUpload = _this.handleUpload.bind(_this);
 	    return _this;
 	  }
@@ -22020,37 +22020,13 @@
 	  _createClass(Excel, [{
 	    key: 'runSimulation',
 	    value: function runSimulation() {
-	      var data = new _MonteCarlo2.default(this.state.data).getData();
+	      var results = new _MonteCarlo2.default(this.state.data, this.state.storiesToEstm).runSimulation();
+	      var data = results.frequencies;
+	      var the90thPercentile = results.the90thPercentile;
 	      var wip = this.calculateWorkInProgress(this.state.data);
-	      return Object.keys(data).map(function (k, i) {
+	      return [Math.round(the90thPercentile / wip), Object.keys(data).map(function (k, i) {
 	        return [k / wip, data[k]];
-	      });
-	    }
-	  }, {
-	    key: '_save',
-	    value: function _save(e) {
-	      e.preventDefault();
-	      var input = e.target.firstChild;
-	      var data = this.state.data.slice();
-	      data[this.state.edit.row][this.state.edit.cell] = input.value;
-	      this.setState({ edit: null, data: data });
-	    }
-	  }, {
-	    key: '_sort',
-	    value: function _sort(e) {
-	      var descending = this.state.sortby === column && !this.state.descending;
-	      var column = e.target.cellIndex;
-	      var data = this.state.data.slice();
-	      data.sort(function (a, b) {
-	        return descending ? a[column] > b[column] ? 1 : -1 : a[column] < b[column] ? 1 : -1;
-	      });
-	      this.setState({ data: data, sortby: column, descending: descending });
-	    }
-	  }, {
-	    key: '_showEditor',
-	    value: function _showEditor(e) {
-	      var edit = { edit: { row: parseInt(e.target.dataset.row, 10), cell: e.target.cellIndex } };
-	      this.setState(edit);
+	      })];
 	    }
 	  }, {
 	    key: 'handleUpload',
@@ -22072,19 +22048,39 @@
 	      fr.readAsBinaryString(file);
 	    }
 	  }, {
+	    key: 'onStoriesToEstmSubmit',
+	    value: function onStoriesToEstmSubmit(e) {
+	      e.preventDefault();
+	      var storiesToEstm = Number(e.target.firstChild.value);
+	      this.setState({ storiesToEstm: storiesToEstm });
+	    }
+	  }, {
 	    key: 'render',
 	    value: function render() {
 	      var _this3 = this;
 	
-	      return _react2.default.DOM.div(null, _react2.default.DOM.table(null, [_react2.default.DOM.thead({ onClick: this._sort }, _react2.default.DOM.tr(null, this.props.headers.map(function (title, idx) {
+	      var _runSimulation = this.runSimulation();
+	
+	      var _runSimulation2 = _slicedToArray(_runSimulation, 2);
+	
+	      var the90Percentile = _runSimulation2[0];
+	      var data = _runSimulation2[1];
+	
+	      return _react2.default.DOM.div(null, _react2.default.createElement(
+	        'div',
+	        null,
+	        'Stories to estimate: ',
+	        _react2.default.createElement(
+	          'form',
+	          { onSubmit: this.onStoriesToEstmSubmit },
+	          _react2.default.createElement('input', { type: 'text', defaultValue: "10" })
+	        )
+	      ), _react2.default.DOM.table(null, [_react2.default.DOM.thead({ onClick: this._sort }, _react2.default.DOM.tr(null, this.props.headers.map(function (title, idx) {
 	        return _react2.default.DOM.th({ key: idx }, _this3.state.sortby === idx ? title += _this3.state.descending ? '↑' : '↓' : title);
-	      }))), _react2.default.DOM.tbody({ onDoubleClick: this._showEditor }, this.state.data.map(function (row, rowidx) {
+	      }))), _react2.default.DOM.tbody(null, this.state.data.map(function (row, rowidx) {
 	        return _react2.default.DOM.tr({ key: rowidx }, row.map(function (cell, idx) {
 	          var edit = _this3.state.edit;
 	          var content = cell.toString();
-	          if (edit && edit.row === rowidx && edit.cell === idx) {
-	            content = _react2.default.DOM.form({ onSubmit: _this3._save }, _react2.default.DOM.input({ type: 'text', defaultValue: content }));
-	          }
 	          return _react2.default.DOM.td({ key: idx, 'data-row': rowidx }, (0, _dateformat2.default)(content, 'yyyy-mm-dd'));
 	        }), _react2.default.createElement(
 	          'td',
@@ -22097,7 +22093,16 @@
 	        name: "upload_file",
 	        className: 'cycle_times',
 	        onChange: this.handleUpload
-	      }), _react2.default.createElement(_Chart2.default, { data: this.runSimulation() }));
+	      }), _react2.default.createElement(_Chart2.default, { data: data }), _react2.default.createElement(
+	        'div',
+	        null,
+	        _react2.default.createElement(
+	          'h3',
+	          null,
+	          'The 90th Percentile: ',
+	          the90Percentile
+	        )
+	      ));
 	    }
 	  }]);
 	
@@ -22110,7 +22115,8 @@
 	  sortby: null,
 	  descending: false,
 	  edit: null,
-	  workInProgress: 0
+	  workInProgress: 0,
+	  storiesToEstm: _react2.default.PropTypes.number
 	};
 	exports.default = Excel;
 
@@ -23575,7 +23581,6 @@
 	    key: 'chartConfig',
 	    value: function chartConfig() {
 	      var data = this.props.data;
-	      console.log('data', data);
 	      return {
 	        title: {
 	          text: 'Time forecast',
@@ -24021,22 +24026,23 @@
 	      return counts;
 	    }
 	  }, {
-	    key: "getData",
-	    value: function getData() {
-	      var workingDays = this.data.map(function (arr) {
-	        return workingDaysBetween.apply(undefined, _toConsumableArray(arr));
-	      });
-	      var results = this.monteCarlo(this.storiesToEstimate, workingDays);
-	      return this.calculateFrequencies(results);
+	    key: "runSimulation",
+	    value: function runSimulation() {
+	      var simulationResults = this.monteCarlo(this.storiesToEstimate, this.workingDays);
+	      return {
+	        frequencies: this.calculateFrequencies(simulationResults),
+	        the90thPercentile: simulationResults.sort()[Math.round(simulationResults.length * 95 / 100)] };
 	    }
 	  }]);
 	
-	  function MonteCarlo(data) {
+	  function MonteCarlo(data, storiesToEstimate) {
 	    _classCallCheck(this, MonteCarlo);
 	
-	    this.mtIterations = 1000000;
-	    this.storiesToEstimate = 10;
-	    this.data = data;
+	    this.mtIterations = 100000;
+	    this.storiesToEstimate = storiesToEstimate;
+	    this.workingDays = data.map(function (arr) {
+	      return workingDaysBetween.apply(undefined, _toConsumableArray(arr));
+	    });
 	  }
 	
 	  _createClass(MonteCarlo, [{
