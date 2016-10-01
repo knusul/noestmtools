@@ -24003,6 +24003,7 @@
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 	
+	/*jshint esversion: 6 */
 	function workingDaysBetween(from, to) {
 	  var fromCopy = new Date(from.getTime());
 	  var n = 1;
@@ -24049,7 +24050,7 @@
 	    key: "monteCarlo",
 	    value: function monteCarlo(stories, leadTimes) {
 	      var results = [];
-	      [].concat(_toConsumableArray(Array(this.mtIterations).keys())).map(function (i) {
+	      for (var i = 0; i < this.mtIterations; i++) {
 	        var storiesToDo = stories;
 	        var totalDays = 0;
 	        while (storiesToDo > 0) {
@@ -24058,7 +24059,7 @@
 	          storiesToDo -= 1;
 	        }
 	        results.push(totalDays);
-	      });
+	      }
 	      return results;
 	    }
 	  }]);

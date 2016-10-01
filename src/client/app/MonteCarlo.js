@@ -1,12 +1,13 @@
+/*jshint esversion: 6 */
 export function workingDaysBetween(from, to){
-   var fromCopy = new Date(from.getTime());
-   var n=1;
-   while(fromCopy<to){
-     if( fromCopy.getDay() >0 && fromCopy.getDay() <6) n++;
-     fromCopy.setDate(fromCopy.getDate()+1) ;
-   }
-   return n;
- }
+  var fromCopy = new Date(from.getTime());
+  var n=1;
+  while(fromCopy<to){
+    if( fromCopy.getDay() >0 && fromCopy.getDay() <6) n++;
+    fromCopy.setDate(fromCopy.getDate()+1) ;
+  }
+  return n;
+}
 
 class MonteCarlo{
   calculateFrequencies(data){
@@ -23,7 +24,7 @@ class MonteCarlo{
     var simulationResults =  this.monteCarlo(this.storiesToEstimate, this.workingDays);
     return {
       frequencies: this.calculateFrequencies(simulationResults),
-      the90thPercentile: simulationResults.sort()[Math.round(simulationResults.length * 95/100)]}
+        the90thPercentile: simulationResults.sort()[Math.round(simulationResults.length * 95/100)]};
   }
 
   constructor(data, storiesToEstimate){
@@ -34,17 +35,17 @@ class MonteCarlo{
 
   monteCarlo(stories, leadTimes){
     var results = [];
-    [...Array(this.mtIterations).keys()].map((i) =>{
+    for(var i=0; i< this.mtIterations; i++){
       var storiesToDo = stories;
       var totalDays = 0;
       while(storiesToDo > 0){
-        var randomLeadTime = leadTimes[Math.floor(Math.random()*leadTimes.length)]
+        var randomLeadTime = leadTimes[Math.floor(Math.random()*leadTimes.length)];
         totalDays = totalDays + randomLeadTime;
         storiesToDo -= 1;
       }
       results.push(totalDays);
-    });
-    return results
+    }
+    return results;
   }
 
 }
