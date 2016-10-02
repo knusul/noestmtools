@@ -13,6 +13,10 @@ var config = {
   module : {
     loaders : [
       {
+        test: /\.json$/,
+        loader: 'json-loader'
+      },
+      {
         test : /\.jsx?/,
         include : APP_DIR,
         loader : 'babel'

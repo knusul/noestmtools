@@ -10,12 +10,22 @@ module.exports = function(config) {
         },
         webpack: {
             module: {
-                loaders: [
-                    { test: /\.js/, exclude: /node_modules/, loader: 'babel-loader' }
-                ]
-            },
-            watch: true
-        },
+              loaders: [
+                {
+                  test: /\.json$/,
+                  loader: 'json-loader'
+                },
+                { test: /\.js/, exclude: /node_modules/, loader: 'babel-loader' }
+              ]
+              },
+              watch: true,
+              externals:
+              {
+                'react/addons': true,
+                'react/lib/ExecutionEnvironment': true,
+                'react/lib/ReactContext': true
+              }
+              },
         webpackServer: {
             noInfo: true
         }

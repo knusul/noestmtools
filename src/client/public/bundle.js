@@ -23574,6 +23574,7 @@
 	  function Chart(props) {
 	    _classCallCheck(this, Chart);
 	
+	    console.log("construct");
 	    return _possibleConstructorReturn(this, (Chart.__proto__ || Object.getPrototypeOf(Chart)).call(this, props));
 	  }
 	

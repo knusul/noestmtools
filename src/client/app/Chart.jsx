@@ -7,6 +7,7 @@ class Chart extends React.Component{
    return  <ReactHighcharts config = {this.chartConfig()}></ReactHighcharts>
   }
   constructor(props){
+    console.log("construct");
     super(props);
   }
   chartConfig() {
