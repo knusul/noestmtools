@@ -14,6 +14,7 @@
     "babel-preset-react": "^6.11.1",
     "bower": "^1.7.9",
     "dateformat": "^1.0.12",
+    "flow": "^0.2.3",
     "highcharts": "^4.2.6",
     "karma-phantomjs-launcher": "^1.0.2",
     "papaparse": "^4.1.2",
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "enzyme": "^2.4.1",
+    "flow-bin": "^0.33.0",
     "jasmine-core": "^2.5.2",
     "json-loader": "^0.5.4",
     "karma": "^1.3.0",
@@ -31,5 +33,24 @@
     "karma-webpack": "^1.8.0",
     "react-addons-test-utils": "^15.3.2",
     "webpack": "^1.13.2"
+  },
+  "eslintConfig": {
+    "ecmaFeatures": {
+      "jsx": true,
+      "modules": true 
+    },
+    "env": {
+      "browser": true,
+      "node": true,
+      "es6": true
+    },
+    "rules": {
+      "strict": 0,
+      "no-underscore-dangle": 0,
+      "quotes": [
+        2,
+      "single"
+        ]
+    }
   }
 }

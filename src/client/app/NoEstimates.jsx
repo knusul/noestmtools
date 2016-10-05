@@ -1,3 +1,4 @@
+// @flow
 import React from 'react';
 import Papa from 'papaparse'
 import  Chart  from './Chart.jsx';
