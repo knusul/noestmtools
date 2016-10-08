@@ -24,6 +24,8 @@
     "webpack": "^1.13.2"
   },
   "devDependencies": {
+    "babel-core": "^6.17.0",
+    "babel-loader": "^6.2.5",
     "enzyme": "^2.4.1",
     "flow-bin": "^0.33.0",
     "jasmine-core": "^2.5.2",
@@ -37,7 +39,7 @@
   "eslintConfig": {
     "ecmaFeatures": {
       "jsx": true,
-      "modules": true 
+      "modules": true
     },
     "env": {
       "browser": true,
@@ -49,8 +51,8 @@
       "no-underscore-dangle": 0,
       "quotes": [
         2,
-      "single"
-        ]
+        "single"
+      ]
     }
   }
 }

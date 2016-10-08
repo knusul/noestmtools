@@ -66,7 +66,7 @@ class Excel extends React.Component {
 
   render(){
     var [the90Percentile, data] = this.runSimulation();
-    return React.DOM.div(null, <div>Stories to estimate: <form onSubmit={this.onStoriesToEstmSubmit} ><input type='text' defaultValue={"10"}/></form></div> ,React.DOM.table(null,[
+    return React.DOM.div(null, React.DOM.table(null,[
         React.DOM.thead({onClick: this._sort},
           React.DOM.tr(null,
             this.props.headers.map((title, idx) => React.DOM.th({key: idx}, this.state.sortby === idx? title+= this.state.descending? '\u2191': '\u2193': title))
@@ -83,14 +83,17 @@ class Excel extends React.Component {
             }))
 
       ]),
+      <p><label for='cycle_times'>Upload cycle times form csv(format: StoryIdentifier, WorkStartDate(YYYY-MM-DD), WorkEndDate):</label></p>,
       React.DOM.input({
+        id: "cycle_times",
         type: 'file',
         name: "upload_file",
         className: 'cycle_times',
         onChange: this.handleUpload,
       }),
+      <p>How many stories you have to estimate: <form onSubmit={this.onStoriesToEstmSubmit} ><input type='text' defaultValue={"10"}/></form></p> ,
     <Chart data = { data }></Chart>,
-      <div><h3>The 90th Percentile: {the90Percentile}</h3></div>
+      <div><h3>The 90th Percentile: {the90Percentile}</h3><p>The 90th Percentile represents the amount of days needed to complete given stories with 90% certainty </p></div>
         );
   }
 }
