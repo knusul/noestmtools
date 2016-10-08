@@ -23,13 +23,16 @@ class Chart extends React.Component{
         },
         yAxis: {
           title: {
-            text: 'Count'
+            text: ''
           },
-          plotLines: [{
-            value: 0,
-            width: 1,
-            color: '#808080'
-          }]
+          lineWidth: 0,
+          minorGridLineWidth: 0,
+          lineColor: 'transparent',
+          labels: {
+              enabled: false
+          },
+          minorTickLength: 0,
+          tickLength: 0
         },
         legend: {
           layout: 'vertical',
