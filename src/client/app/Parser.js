@@ -9,9 +9,10 @@ class Parser {
 
   errors(data){
     var errors = []
-      console.log(data);
-      data.forEach((dataTouple) => {
-        if(isNaN(Date.parse(dataTouple[0])) || isNaN(Date.parse(dataTouple[1]))) {
+      data.forEach((dataTuple) => {
+        if(isNaN(Date.parse(dataTuple[0])) ||
+          isNaN(Date.parse(dataTuple[1])) ||
+          dataTuple.length != 2) {
           errors.push(["Can not parse", dataTouple.join(", ")])
         }
       });
