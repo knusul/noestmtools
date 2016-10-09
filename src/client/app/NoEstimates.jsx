@@ -1,8 +1,8 @@
 // @flow
 import React from 'react';
-import Papa from 'papaparse'
 import  Chart  from './Chart.jsx';
 import MonteCarlo from './MonteCarlo.js'
+import Parser from './Parser.js'
 import { workingDaysBetween} from './MonteCarlo.js'
 import Dateformat  from 'dateformat'
 
@@ -49,9 +49,14 @@ class Excel extends React.Component {
     var fr = new FileReader();
     fr.onload = (e) =>{
       var text = e.target.result;
-      var data = Papa.parse(text, { delimiter: ','}).data.filter(e => e.length > 1).map((data) => [new Date(data[0]), new Date(data[1] ) ]);
-      this.setState({data: data});
-      this.runSimulation();
+      var parser = new Parser(text);
+      var data = parser.parse();
+      if(data.status == 'ok'){
+        this.setState({data: data.content});
+        this.runSimulation();
+      }else{
+        alert(data.content.join(","));
+      }
     }
     var file = e.target.files[0];
     fr.readAsBinaryString(file);
