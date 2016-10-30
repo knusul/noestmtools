@@ -2,9 +2,10 @@
   "name": "noestmtools",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/client/app/index.jsx",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "webpack-dev-server --progress --colors --hot --inline --quiet false --noInfo false --content-base src/client --port 3000"
   },
   "author": "Jakub Nieznalski",
   "license": "ISC",
@@ -19,6 +20,7 @@
     "karma-phantomjs-launcher": "^1.0.2",
     "papaparse": "^4.1.2",
     "react": "^15.3.2",
+    "react-bootstrap": "^0.30.5",
     "react-dom": "^15.3.2",
     "react-highcharts": "^10.0.0",
     "webpack": "^1.13.2"
